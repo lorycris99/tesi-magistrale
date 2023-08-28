@@ -3,8 +3,29 @@
 \chapter{Introduzione}
 \markboth{Introduzione}{}
 % [titolo ridotto se non ci dovesse stare] {titolo completo}
+\begin{citazione}
+    In questo capitolo verrà introdotto il mondo dell'automotive con relative problematiche di sicurezza riscontrate e verrà illustrata la composizione del presente elaborato
+\end{citazione}
 
 \section{Introduzione al mondo \emph{Automotive}}
+Oggigiorno il settore automobilistico è sempre più in crescita e sempre più innovativo, grazie al lavoro continuo di ingegneri e ricercatori con lo scopo di rendere i motori sempre più efficienti ed ecosostenibili e rendere la guida dei veicoli sempre più confortevole e sicura. Uno dei motivi per cui è stato possibile raggiungere questi traguardi è stata l'introduzione di \emph{dispositivi elettronici} (anche definiti \emph{sistemi embedded}) all'interno delle automobili \cite{auto_electronics}, grazie ai quali è possibile realizzare moltissimi controlli e assistenze (alcuni in maniera del tutto automatica) durante la guida.\\
+I componenti elettronici che si occupano del controllo di tutti questi sistemi sono chiamati \textbf{centraline} o \textbf{ECU} (\emph{Electronic Control Unit}), che saranno più o meno sofisticate in base allo scopo a cui devono assolvere e al sistema che devono gestire. Quest'ultime sono le parti più importanti di un singolo sistema e in media, in un'automobile moderna, si possono trovare dalle 40 alle 100 \emph{ECU} installate all'interno di una singola auto \cite{auto_electronics}.
+
+Tutte queste \emph{ECU}, in base al ruolo che ricoprono e al sistema che controllano, di solito vengono raggruppate in 4 sottosistemi:
+\begin{enumerate}
+    \item Propulsione (\textbf{powertrain}), ovvero la gestione di motore, trasmissione, ruote, ecc. Le \emph{ECU} in questo sottosistema di solito sono responsabili del controllo dell'iniziezione di carburante, tracciamento e ottimizzazione di coppia motrice, flusso dell'olio, pressione interna dei cilindri, emissioni, ecc.
+    \item Telaio (\textbf{Chassis}), ovvero la gestione dell'impianto frenante, delle sospensioni e dello sterzo. In questo sottosistema le \emph{ECU} sono responsabili della gestione di meccanismi come \emph{ABS} (Anti-lock Braking System), frenata assistita, distribuzione della forza frenante (\emph{EBD} o Electronic Brakeforce Distribution), ecc.
+    \item Abitacolo (\textbf{Body}), ovvero il controllo di componenti per il comfort dei passeggeri e del guidatore, come il climatizzatore, il cruise-control, i fari automatici, la regolazione elettronica dei sedili, ecc.
+    \item \textbf{Infotainment}, ovvero un'interfaccia che facilita l'interazione tra persone e automobile. Alcune delle funzionalità che di solito offre un sistema di infotainment sono la connessione WiFi/Bluetooth con smartphone per la riproduzione di contenuti o, con sistemi molto più avanzati, una diagnostica in tempo reale dell'automobile (anche da remoto) grazie all'intercomunicazione con gli altri sottosistemi. \cite{huang_2019_invehicle}
+\end{enumerate}
+
+Per realizzare tutti questi sistemi, ovviamente, tutte le \emph{ECU} non possono lavorare in maniera indipendente ma hanno bisogno di comunicare tra di loro per ottenere ed inviare informazioni utili. A questo proposito, sono stati ideati vari protocolli di comunicazione, che differiscono in banda e tipologia di mezzo di comunicazione (\emph{wired} o \emph{wireless}) in base alle esigenze, per permettere l'interconnesione di più \emph{ECU}. Alcuni dei protocolli \emph{wired} più diffusi sono:
+\begin{itemize}
+    \item \textbf{CAN} (Controller Area Network), il più diffuso nei sistemi \textbf{powertrain}, \textbf{chassis} e \textbf{body} per via della sua tolleranza agli errori, per il suo basso costo e per la sua semplicità di realizzazione. È un protocollo bus (quindi i messaggi sono inviati in broadcast), asincrono, multi-master e che ha una larghezza di banda di 1 Mb/s;
+    \item \textbf{FlexRay}, anch'esso diffuso nei sistemi \textbf{powertrain}, \textbf{chassis} e \textbf{body} come valida alternativa di \emph{CAN} per via della sua affidabilità e della sua larghezza di banda di 10 Mb/s. Grazie alla sua affidabilità e alle sue prestazioni, può essere utilizzato in sistemi avanzati come \emph{brake-by-wire}, \emph{Adaptive Cruise-control}, ecc. Inoltre può essere usato anche come rete di backbone (esattamente come \emph{CAN}) e può essere utilizzato in sinergia con reti \emph{CAN} e \emph{LIN};
+    \item \textbf{LIN} (Local Interconnect Network), molto diffuso nei sistemi \textbf{body} dove le prestazioni e la resilienza di \emph{CAN} non sono necessarie. È un protocollo bus, single-master con un massimo teorico di 60 slave e che ha una largezza di banda di 20 Kb/s. Più nodi master \emph{LIN} possono essere messi in comunicazione tra loro mediante un "ponte" \emph{CAN} e questo protocollo di solito è utilizzato in sistemi come l'apertura e chiusura elettronica delle porte e finestrini, la regolazione automatica della temperatura, l'accensione automatica delle luci, ecc; \cite{vinodhkumar_2014_automotive}
+    \item \textbf{MOST} (Media Oriented System Transport), protocollo molto diffuso nei sistemi \textbf{infotainment}. Permette il raggiungimento di una largezza di banda di 50 Mb/s e, con una topologia ad anello, è in grado di collegare fino a 64 dispositivi \emph{MOST}. Tuttavia, nonostante le sue prestazioni, il costo di realizzazione di una rete \emph{MOST} è estremamente dispendioso ed è quindi utilizzato solo per realizzare collegamenti video e, in generale, per collegare telecamere installate nell'automobile. \cite{huang_2019_invehicle}
+\end{itemize}
 
 \section{Introduzione al problema}
 
