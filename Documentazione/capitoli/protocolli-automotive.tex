@@ -227,6 +227,95 @@ Un altro vantaggio molto importante che introduce questa variante è la possibil
 Rispetto alla variante standard, con \emph{CAN FD} si possono realizzare sistemi più complessi che richiedono requisiti di banda più stringenti. Ad esempio, si possono realizzare sistemi \textbf{ADAS} (Advanced Driver Assistance System) come cruise control adattivo, frenata automatica d'emergenza, moonitoraggio degli angoli ciechi, ecc. \cite{css_electronics_canfd}
 
 \section{FlexRay}
+Con il procedere degli anni e con lo sviluppo di sistemi sempre più avanzati e complessi, è stato raggiunto un punto dove il protocollo \emph{CAN} comincia a far pesare i propri limiti. Se si pensa all'aumento del numero delle \emph{ECU} all'interno delle automobili, allo sviluppo di sistemi \textbf{X-\emph{by-wire}} e all'implementazione di sistemi di sicurezza sempre più all'avanguardia, anche utilizzando la variante \emph{CAN FD} non si riescono a garantire i sempre più stringenti requisiti di banda e di affidabilità richiesti per il corretto funzionamento di tutti i sistemi. È proprio per questo motivo che un team specializzato ha realizzato \textbf{FlexRay}, un protocollo in grado di soddisfare elevati requisiti di banda, sicurezza, affidabilità e velocità di trasmissione. Non nasce con l'idea di sostituire \emph{CAN} ma, piuttosto, con quella di affiancarsi e cooperare con esso, sebbene la tendenza che stanno seguendo i produttori è di sostituire \emph{CAN} con \emph{FlexRay}.
+
+\subsection{Caratteristiche del protocollo}
+Il protocollo \emph{FlexRay} presenta diversi vantaggi:
+\begin{itemize}
+    \item Permette il raggiungimento di una larghezza di banda di 10 Mbps, molto più alta rispetto a \emph{CAN} e permette di variare la velocità di trasmissione in base alle necessità;
+    \item Richiede un cablaggio semplice, composto da un cavo con due o quattro fili \cite{ni_flexray}, ma è in grado di lavorare anche con cablaggi di tipo ottico;
+    \item Supporta diverse topologie di rete oltre al \textbf{BUS};
+    \item Assicura una maggiore tolleranza ai guasti maggiore e determinismo;
+    \item Permette l'invio di payload fino ad una lunghezza massima di 254 Byte, circa 30 volte più grande di \emph{CAN}.
+\end{itemize}
+
+\subsubsection{Costi}
+Sebbene sia migliore di \emph{CAN} sotto molti aspetti, lo svantaggio più importante è il costo rischiesto per una rete \emph{FlexRay}, in quanto richiede cavi più costosi per garantire una banda più alta e dispositivi più sofisticati. Tuttavia, essendo che il protocollo è stato realizzato in maniera da poter cooperare con \emph{CAN} e altri protocolli, è possibile abbattere i costi di produzione utilizzando \emph{FlexRay} solo dove strettamente necessario, quindi per sistemi avanzati con stringenti requisiti di affidabilità e banda, e dove non è necessario si può utilizzare \emph{CAN} o altri protocolli che richiedono cablaggi più economici. \cite{eos_flexray}
+
+\subsubsection{Affidabilità}
+Per una migliore tolleranza ai guasti, \emph{FlexRay} utilizza i due fili come due canali di comunicazione separati, infatti, una \emph{ECU} che opera con questo protocollo ha bisogno di un \textbf{controllore FlexRay} che permette l'utilizzo del protocollo stesso e due \textbf{ricetrasmettitori} che permettono di "scrivere" e "leggere" su entrambi i fili in maniera indipendente (come mostrato in \autoref{fig:flexray-node-structure}) e inviare uno stesso messaggio in maniera ridondata su entrambi i fili (oppure una sola volta su uno solo filo in base alla configurazione). I due fili possono essere usati anche come canali separati per inviare messaggi diversi, aumentando in questo modo la larghezza di banda disponibile. Inoltre, \emph{FlexRay} utilizza anche un ulteriore circuito (opzionale), chiamato \textbf{Bus Guardian} \cite{eos_flexray}, il cui scopo è quello di rilevare interferenze generate da messaggi non sincronizzati e proteggere il canale da questi. Utilizzando questo ulteriore dispositivo si riduce in maniera drastica la possibilità di ottenere collisioni. \cite{eos_flexray}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{capitoli/figure-protocolli/flexray-node-structure.jpg}
+    \caption{Struttura tipica di una \emph{ECU} che utilizza \emph{FlexRay}}
+    \label{fig:flexray-node-structure}
+\end{figure}
+
+\subsubsection{Determinismo}
+\emph{FlexRay} utilizza un meccanismo di arbitraggio chiamato \textbf{TDMA} (Time Division Multiple Access), ovvero ad ogni nodo della rete viene assegnato uno \emph{slot} temporale in cui può trasmettere un messaggio. Affinchè non ci siano collisioni, è necessario che ogni nodo della rete abbia il proprio \emph{clock} sincronizzato con gli altri, altrimenti un nodo potrebbe trasmettere in uno slot che non gli è stato assegnato facendo collidere il proprio messaggio con quello inviato dal nodo \emph{legittimo}. Essendo un sistema distribuito, i nodi non hanno un clock fisico \textbf{assoluto} a cui far riferimento, ma vengono impiegati diversi \textbf{nodi di sincronizzazione}, il cui scopo è quello di inviare periodicamente \textbf{frame di sincronizzazione} che aiutino i nodi della rete ad aggiustare il proprio clock in caso di \emph{sfasature}. Così facendo, tutti i clock (compresi quelli dei nodi di sincronizzazione) rimangono allineati garantendo il corretto funzionamento dell'arbitraggio \textbf{TDMA}. \cite{eos_flexray}
+
+\subsection{Ciclo di comunicazione}
+In \emph{FlexRay} l'accesso al canale condiviso è basato sull'assegnamento di uno slot temporale ad ogni nodo, all'interno del quale è possibile inviare un messaggio. Questo assegnamento viene reiterato in un ciclo che prende il nome di \emph{ciclo di comunicazione} ed è l'elemento principale dello schema di accesso al canale condiviso. È definito in termini di una \textbf{gerarchia temporale} composta da 4 livelli, che sono i seguenti:
+\begin{itemize}
+    \item \textbf{Communication Cycle}: è il livello più alto e definisce il ciclo in termini di 4 fasi (o segmenti), che sono \textbf{segmento statico}, \textbf{segmento dinamico}, \textbf{symbol window} e \textbf{network idle time};
+    \item \textbf{Arbitration Grid}: livello subito inferiore al precedente ed è lo scheletro di tutto lo schema di arbitraggio. Divide i vari segmenti in sezioni temporali che è possibile assegnare ai vari nodi della rete e, in particolare, nel \emph{segmento statico} queste sezioni prendono il nome di \textbf{slot statici} mentre nel \emph{segmento dinamico} prendono il nome di \textbf{minislot}. La differenza tra questi due sta nel meccanismo di arbitraggio utilizzato per assegnarli ai vari nodi. 
+    \item \textbf{Macrotick}: livello subito inferiore al precedente e definisce la durata di un ciclo e di ogni segmento e sezione, i quali hanno una durata corrispondente ad un numero intero di \emph{Macrotick}. Un \emph{Macrotick} si definisce come \textbf{un numero intero di \emph{Microtick}};
+    \item \textbf{Microtick}: livello più basso e definisce l'elemento base di tutto il ciclo, il \emph{Microtick}. Esso non è altro che un numero intero di \emph{tick} (ticchettii, battiti) del clock di un oscillatore presente in un \emph{controllore FlexRay} di un nodo.
+\end{itemize}
+
+\subsubsection{Segmento statico}
+
+\subsubsection{Segmento dinamico}
+
+\subsubsection{Symbol Window}
+
+\subsubsection{Network Idle Time}
+
+\subsection{Sincronizzazione del Clock}
+
+\subsection{\emph{Wakeup} e \emph{Startup}}
+
+\subsection{Struttura di un messaggio}
+Un messaggio in \emph{FlexRay} è composto da tre parti (\textbf{header}, \textbf{payload} e \textbf{trailer}) e si struttura come segue:
+\begin{itemize}
+    \item \textbf{Riservato}: 1 bit che è lasciato per sviluppi futuri;
+    \item \textbf{Payload Preamble Indicator}:  1 bit che specifica se il campo \textbf{payload} è utilizzato per scambio di dati (bit impostato a $0$) oppure per un motivo diverso (bit impostato a $1$);
+    \item \textbf{Null frame}: 1 bit che indica se il payload contiene dati validi (bit impostato a $1$) oppure se contiene dati non validi (bit impostato a $0$). In quest'ultimo caso, tutti i bit del campo \textbf{payload} vengono impostati a 0;
+    \item \textbf{Sync Frame}: 1 bit che indica se il frame è di sincronizzazione (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di sincronizzazione possono essere inviati solo se ci si trova in un segmento statico;
+    \item \textbf{Startup Frame Indicator}: 1 bit che indica se il frame è di tipo \textbf{startup} (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di startup sono dei tipi particolari di frame che possono essere inviati solo da nodi \emph{coldstart} per sfruttare il meccanismo dello \emph{startup} dei nodi, inoltre, questo tipo di frame dovrebbe avere sia questo bit sia il bit \textbf{sync} a $1$;
+    \item \textbf{Frame ID}: 11 bit che definiscono lo slot temporale nel quale questo messaggio deve inviato. Ovviamente in un ciclo di comunicazione deve essere unico ed è un numero nel range 1-2047 (l'ID 0 non è valido);
+    \item \textbf{Payload Length}: 7 bit che indicano quanti gruppi di 2 Byte sono presenti nel payload. Se ad esempio, questo campo viene impostato a 35, allora la lunghezza del payload sarà $35\times 2 = 70$ Byte.
+    \item \textbf{Header CRC}: 11 bit che indicano il codice \textbf{CRC} per individuare errori nell'header. Viene calcolato tenendo in considerazione i bit \textbf{Sync frame}, \textbf{Startup Frame Indicator}, \textbf{Frame ID} e \textbf{Payload Length};
+    \item \textbf{Cycle Count}: 6 bit che indicano in quale ciclo di comunicazione ci si trova al momento dell'invio del frame;
+    \item \textbf{Payload}: segmento che ha una lunghezza massima di 254 Byte e che contiene i dati da inviare insieme al frame;
+    \item \textbf{CRC}: 24 bit che rappresentato il codice \textbf{CRC} per individuare errori nel payload;
+\end{itemize}
+
+\begin{figure}[h]
+    \begin{subfigure}{0.4\textwidth}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/flexray-header.png}
+        \caption{Struttura dell'header di un frame \emph{FlexRay}}
+        \label{fig:flexray-header}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.4\textwidth}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/flexray-payload.png}
+        \caption{Struttura del payload di un frame \emph{FlexRay}}
+        \label{fig:flexray-payload}
+    \end{subfigure}
+    \centering
+    \begin{subfigure}{0.4\textwidth}
+        \vspace{0.3cm}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/flexray-trailer.png}
+        \caption{Struttura del trailer di un frame \emph{FlexRay}}
+        \label{fig:flexray-trailer}
+    \end{subfigure}
+    \caption{Struttura di un frame \emph{FlexRay}}
+    \label{fig:flexray-frame-structure}
+\end{figure}
+
+\subsection{Topologie supportate}
 
 \section{LIN}
 
