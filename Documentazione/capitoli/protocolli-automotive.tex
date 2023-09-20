@@ -236,7 +236,8 @@ Il protocollo \emph{FlexRay} presenta diversi vantaggi:
     \item Richiede un cablaggio semplice, composto da un cavo con due o quattro fili \cite{ni_flexray}, ma è in grado di lavorare anche con cablaggi di tipo ottico;
     \item Supporta diverse topologie di rete oltre al \textbf{BUS};
     \item Assicura una maggiore tolleranza ai guasti maggiore e determinismo;
-    \item Permette l'invio di payload fino ad una lunghezza massima di 254 Byte, circa 30 volte più grande di \emph{CAN}.
+    \item Permette l'invio di payload fino ad una lunghezza massima di 254 Byte, circa 30 volte più grande di \emph{CAN};
+    \item Consente l'accensione e lo spegnimento dei nodi in maniera dinamica per permettere una riduzione dei consumi elettrici.
 \end{itemize}
 
 \subsubsection{Costi}
@@ -261,36 +262,63 @@ In \emph{FlexRay} l'accesso al canale condiviso è basato sull'assegnamento di u
     \item \textbf{Communication Cycle}: è il livello più alto e definisce il ciclo in termini di 4 fasi (o segmenti), che sono \textbf{segmento statico}, \textbf{segmento dinamico}, \textbf{symbol window} e \textbf{network idle time};
     \item \textbf{Arbitration Grid}: livello subito inferiore al precedente ed è lo scheletro di tutto lo schema di arbitraggio. Divide i vari segmenti in sezioni temporali che è possibile assegnare ai vari nodi della rete e, in particolare, nel \emph{segmento statico} queste sezioni prendono il nome di \textbf{slot statici} mentre nel \emph{segmento dinamico} prendono il nome di \textbf{minislot}. La differenza tra questi due sta nel meccanismo di arbitraggio utilizzato per assegnarli ai vari nodi. 
     \item \textbf{Macrotick}: livello subito inferiore al precedente e definisce la durata di un ciclo e di ogni segmento e sezione, i quali hanno una durata corrispondente ad un numero intero di \emph{Macrotick}. Un \emph{Macrotick} si definisce come \textbf{un numero intero di \emph{Microtick}};
-    \item \textbf{Microtick}: livello più basso e definisce l'elemento base di tutto il ciclo, il \emph{Microtick}. Esso non è altro che un numero intero di \emph{tick} (ticchettii, battiti) del clock di un oscillatore presente in un \emph{controllore FlexRay} di un nodo.
+    \item \textbf{Microtick}: livello più basso e definisce l'elemento base di tutto il ciclo, il \emph{Microtick}. Esso non è altro che un numero intero di \emph{tick} (ticchettii, battiti) del clock di un oscillatore presente in un \emph{controllore FlexRay} di un nodo (come in un normale processore all'interno di un computer).
 \end{itemize}
 
 \subsubsection{Segmento statico}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\textwidth]{capitoli/figure-protocolli/flexray-communication-cycle.jpg}
+    \caption{Suddivisione del ciclo di comunicazione}
+    \label{fig:communication-cycle-segments}
+\end{figure}
+Segmento sempre presente in ogni \emph{ciclo di comunicazione} ed è la fase iniziale del ciclo. Questa fase è suddivisa in \emph{slot statici} dalla stessa lunghezza in \textbf{Macrotick} e il numero dipende dalla configurazione della rete. Questi slot vengono assegnati in maniera statica ai nodi della rete e, quindi, il meccanismo di arbitraggio presente in questa fase è il \textbf{TDMA}. Affinchè tutti i nodi siano in grado di rispettare i turni, ognuno mantiene un \emph{contatore di slot} (uno per ogni canale) che viene incrementato ad ogni numero di \textbf{Macrotick} corrispondente alla lunghezza di uno \emph{slot statico}. In questo modo, tutti sono a conoscenza dello slot corrente e a chi è assegnato. \cite{flexray_specification}\\
+Questa fase garantisce un livello di determinismo massimo, dal momento che tutti sanno quando gli altri trasmetteranno dati, tuttavia un \emph{segmento statico} troppo lungo rischia di rallentare inevitabilmente la rete e introdurre latenze eccessive per messaggi urgenti. Inoltre, se un nodo non invia nulla durante il proprio \emph{slot statico}, questo è interamente sprecato e bisogna attendere la fase successiva o il successivo ciclo. \cite{ni_flexray}
+
 \subsubsection{Segmento dinamico}
+Segmento successivo e opzionale a quello \emph{statico} che può essere omesso in fase di configurazione della rete. Questa fase è suddivisa in \emph{minislot} tipicamente lunghi pochi \textbf{Macrotick} (anche uno solo e, in generale, più breve di uno \emph{slot statico} \cite{eos_flexray}) e, anche qui, il numero di \emph{minislot} dipende dalla configurazione della rete. In questa fase, i \emph{minislot} vengono assegnati in base alla priorità delle informazioni da inviare, quindi un nodo che deve inviare un'informazione con priorità più elevata avrà assegnato un \emph{minislot} più vicino all'inizio della fase mentre un nodo con informazioni meno prioritarie avrà assegnato un \emph{minislot} più lontano. Anche in questa fase vengono impiegati dei contatori per stabilire in quale \emph{minislot} ci si trova, solo che a differenza del \emph{segmento statico} la durata di un singolo \emph{minislot} può variare:
+\begin{itemize}
+    \item Se il nodo a cui è assegnato il \emph{minislot} rimane in \emph{idle} e non trasmette nulla, la durata di questo effettivamente definito in fase di configurazione della rete;
+    \item Se il nodo decide di trasmettere, la durata del \emph{minislot} viene "\emph{espansa}" facendolo durare più \emph{minislot} e permettendo la trasmissione dell'intero dato senza interruzioni e in maniera \emph{fault-tolerant}.
+\end{itemize}
+
+Questo schema di "espansione" permette di non perdere larghezza di banda preziosa nel caso in cui uno o più nodi decidano di non inviare nulla. Inoltre, è necessario perchè la durata di un \emph{minislot} è tale da non riuscire ad includere un'intero messaggio \emph{FlexRay} e, per questa ragione, quando un nodo decide di trasmettere ha bisogno di un intervallo più lungo.\\
+Come già anticipato, anche qui vengono utilizzati dei contatori per tenere traccia del \emph{minislot} in cui ci si trova ma, essendo che chi trasmette acquisisce più \emph{minislot}, viene fissato un limite di \emph{minislot} "effettivi" oltre il quale passare alla fase successiva (o ciclo successivo) anche se non si è raggiunto il numero di \emph{minislot} "definito". Questo significa che i nodi con messaggi meno prioritari potrebbero perdere il proprio turno e trasmettere nella fase successiva, ma non è un problema in quanto essendo meno prioritari sono meno suscettibili alle latenze rispetto a quelli con priorità più alta. \cite{eos_flexray} \cite{flexray_specification}\\
+Lo schema di arbitraggio utilizzato in questa fase ricorda molto quello utilizzato da \emph{CAN}.
 
 \subsubsection{Symbol Window}
+Segmento successivo al \emph{dinamico} ed è una fase dove vengono scambiati messaggi di gestione della rete. Tipicamente le applicazioni di alto livello non interagiscono con questa fase \cite{ni_flexray} e i messaggi inviati possono essere di sincronizzazione del clock, di allarmi vari o di wakeup o startup. Anche la lunghezza di questa fase è definita in fase di configurazione e in termini di \textbf{Macrotick}.
 
 \subsubsection{Network Idle Time}
+Segmento successivo alla \emph{Symbol Window} ed è una fase in cui non avviene nessuno scambio di messaggi. Lo scopo di questa fase è quella di permettere ai nodi della rete di effettuare aggiustamenti al proprio clock interno per correggere eventuali \emph{drift} e di eseguire eventuali task aggiuntivi relativi al ciclo di comunicazione. Anche la durata di questa fase è definita in fase di configurazione e tipicamente è molto breve, questo perchè essendo un periodo di inattività tutta la banda assegnata a questa fase è sprecata. Il tutto risulta nell'introduzione di latenze aggiuntive che devono essere ottimizzate facendo durare questa fase il meno possibile. \cite{flexray_specification}
 
 \subsection{Sincronizzazione del Clock}
+In un sistema distribuito come una rete \emph{FlexRay}, ogni nodo ha il proprio \emph{clock} con cui scandisce il tempo. Tuttavia, a causa di fluttuazioni di temperatura, fluttuazioni di voltaggio, purità dei materiali usati nell'oscillatore, differenze dovute alla produzione, ecc. può succedere che i \emph{clock} scandiscano il tempo in maniera diversa (più o meno veloce) e questo significa che anche se i \emph{clock} partono sincronizzati, questi divergono dopo piccoli intervalli di tempo. In un sistema basato quasi interamente su turni e intervalli temporali, ovviamente, clock non affidabili portano all'impossibilità di comunicare senza errori e con le prestazioni desiderate. Per questa ragione, è necessario che un meccanismo di \textbf{sincronizzazione dei clock} che, a intervalli regolari, sincronizzi tutti i \emph{clock} prima che questi divergano compromettendo la rete. Non è necessario che questi siano \textbf{perfettamente} sincronizzati, piuttosto basta che ogni coppia di nodi indichi il "tempo globale" con una differenza che non supera una determinata soglia. \cite{flexray_specification}
+
+Affinchè i nodi rimangano sincronizzati, \emph{FlexRay} prevede la presenza di \textbf{nodi di sincronizzazione} il cui scopo è quello di inviare dei messaggi chiamati \emph{sync frame} ad ogni ciclo che vengono utilizzati da tutti i nodi per correggere il proprio clock da eventuali \emph{drift} (deviazioni). Sebbene il numero di \textbf{Microtick} necessari per un \textbf{Macrotick} sia definito in fase di configurazione della rete, un nodo può modificare questo valore in maniera dinamica per correggere il \emph{drift} del proprio \emph{clock}, incrementandolo o diminuendolo in base a se il clock è troppo veloce o troppo lento \cite{eos_flexray} in modo tale da uniformare per tutti i nodi la durata di un \textbf{Macrotick}. In questo caso si parla di un problema di \textbf{frequenza}, ovvero la durata di un \textbf{Macrotick} non è la stessa, facendo slittare i vari \emph{slot}. \cite{flexray_specification} \cite{nxp_flexray}
+
+Un altro aggiustamento che ogni nodo dovrebbe fare riguarda l'istante in cui una fase comincia poichè, anche se la durata dei \textbf{Macrotick} è uguale per ogni nodo, può succedere che l'inizio di un ciclo è sfasato e quindi nodo crede di essere in una fase/slot errata. Anche in questo caso l'inizio e la fine di un ciclo sono impostati durante la configurazione della rete, ma ogni nodo è comunque in grado di impostare un \emph{offset} in modo tale da eseguire uno \emph{shift} avanti o indietro, in termini di \textbf{Microtick}, in modo da aggiustare la visione di ogni nodo riguardo il ciclo di comunicazione. In questo caso si parla di un problema di \textbf{offset}, ovvero l'inizio di un ciclo o di una fase è slittata di un determinato numero di \textbf{Microtick}. \cite{flexray_specification} \cite{nxp_flexray}
+
+Se un nodo non riceve abbastanza \emph{frame di sincronizzazione}, il clock soffrirebbe di un \emph{drift} inaccettabile per il ciclo di comunicazione e, per questa ragione, può diventare un problema per gli altri in quanto potrebbe trasmettere in uno slot non suo oppure trovarsi in un segmento diverso da quello degli altri nodi. Per evitare che un nodo in questa situazione arrechi disturbi all'intera rete, \emph{FlexRay} prevede che questo nodo segnali all'applicativo la sua entrata in una modalità \emph{passiva}, dove rimane in grado di ricevere i messaggi dagli altri ma non è più in grado di trasmettere messaggi sulla rete. \cite{eos_flexray}
 
 \subsection{\emph{Wakeup} e \emph{Startup}}
+A differenza di \emph{CAN}, \emph{FlexRay} permette di mettere una o più \emph{ECU} (ovviamente non necessarie) in uno stato di \emph{sleeping} in modo tale da minimizzare i consumi elettrici della rete. Per gestire il meccanismo di accensione e spegnimento dinamico della rete o di un gruppo di \emph{ECU} sono previste due funzioni: \emph{Wakeup} e \emph{Startup}.
+
+\subsubsection{Wakeup}
+Questa funzione permette ad una \emph{ECU} l'invio di un messaggio speciale, chiamato \textbf{Wake Up Pattern} (\emph{WUP}), che avverte tutte le \emph{ECU} dormienti di cominciare la fase di avvio. Questo messaggio speciale di solito è inviato durante la \emph{Symbol window} e deve essere inviato solo ed esclusivamente quando nessun'altro ha intenzione di trasmettere messaggi. \cite{eos_flexray}
+
+\subsubsection{Startup}
+Funzione che viene avviata subito dopo la ricezione di un messaggio \emph{WUP} e il suo scopo è quello di allineare tutti i nodi all'arbitraggio \textbf{TDMA} e sincronizzare i clock. In base a quanti nodi vengono riattivati, questa funzione in due tipologie:
+\begin{itemize}
+    \item \textbf{Coldstart}: si vogliono riattivare tutti i nodi della rete e quindi la rete non è operativa;
+    \item \textbf{Integration}: si vogliono riattivare un sottoinsieme di nodi all'interno di una rete già operativa
+\end{itemize}
+
+Una volta terminato il \emph{Wakeup}, un nodo si mette in ascolto sul bus per un determinato intervallo di tempo per capire se c'è del traffico. Se non viene rilevato traffico, allora ci si trova in una tipologia \textbf{Coldstart} e, per questo motivo, invia un \textbf{Collision Avoidance Symbol} (\emph{CAS}) e successivamente un pattern di \emph{coldstart} per un certo numero di cicli. Appena il nodo riceve risposta da un altro nodo, questo termina la fase di \emph{startup} entrando nello stato \emph{operativo} e generando un normale traffico. Se, invece, viene rilevato traffico sul bus allora ci si trova in una tipologia \textbf{Integration} e quindi sono presenti dei nodi attivi. In questo caso il nodo non genera dei pacchetti come nel \textbf{Coldstart} ma si mette nello stato \emph{re-integrazione} e si sincronizza con i messaggi che arrivano sul bus. Una volta terminata la fase di sincronizzazione, il nodo passa nello stato \emph{operativo} partecipando attivamente alla rete.
 
 \subsection{Struttura di un messaggio}
 Un messaggio in \emph{FlexRay} è composto da tre parti (\textbf{header}, \textbf{payload} e \textbf{trailer}) e si struttura come segue:
-\begin{itemize}
-    \item \textbf{Riservato}: 1 bit che è lasciato per sviluppi futuri;
-    \item \textbf{Payload Preamble Indicator}:  1 bit che specifica se il campo \textbf{payload} è utilizzato per scambio di dati (bit impostato a $0$) oppure per un motivo diverso (bit impostato a $1$);
-    \item \textbf{Null frame}: 1 bit che indica se il payload contiene dati validi (bit impostato a $1$) oppure se contiene dati non validi (bit impostato a $0$). In quest'ultimo caso, tutti i bit del campo \textbf{payload} vengono impostati a 0;
-    \item \textbf{Sync Frame}: 1 bit che indica se il frame è di sincronizzazione (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di sincronizzazione possono essere inviati solo se ci si trova in un segmento statico;
-    \item \textbf{Startup Frame Indicator}: 1 bit che indica se il frame è di tipo \textbf{startup} (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di startup sono dei tipi particolari di frame che possono essere inviati solo da nodi \emph{coldstart} per sfruttare il meccanismo dello \emph{startup} dei nodi, inoltre, questo tipo di frame dovrebbe avere sia questo bit sia il bit \textbf{sync} a $1$;
-    \item \textbf{Frame ID}: 11 bit che definiscono lo slot temporale nel quale questo messaggio deve inviato. Ovviamente in un ciclo di comunicazione deve essere unico ed è un numero nel range 1-2047 (l'ID 0 non è valido);
-    \item \textbf{Payload Length}: 7 bit che indicano quanti gruppi di 2 Byte sono presenti nel payload. Se ad esempio, questo campo viene impostato a 35, allora la lunghezza del payload sarà $35\times 2 = 70$ Byte.
-    \item \textbf{Header CRC}: 11 bit che indicano il codice \textbf{CRC} per individuare errori nell'header. Viene calcolato tenendo in considerazione i bit \textbf{Sync frame}, \textbf{Startup Frame Indicator}, \textbf{Frame ID} e \textbf{Payload Length};
-    \item \textbf{Cycle Count}: 6 bit che indicano in quale ciclo di comunicazione ci si trova al momento dell'invio del frame;
-    \item \textbf{Payload}: segmento che ha una lunghezza massima di 254 Byte e che contiene i dati da inviare insieme al frame;
-    \item \textbf{CRC}: 24 bit che rappresentato il codice \textbf{CRC} per individuare errori nel payload;
-\end{itemize}
 
 \begin{figure}[h]
     \begin{subfigure}{0.4\textwidth}
@@ -315,7 +343,46 @@ Un messaggio in \emph{FlexRay} è composto da tre parti (\textbf{header}, \textb
     \label{fig:flexray-frame-structure}
 \end{figure}
 
+\begin{itemize}
+    \item \textbf{Riservato}: 1 bit che è lasciato per sviluppi futuri;
+    \item \textbf{Payload Preamble Indicator}:  1 bit che specifica se il campo \textbf{payload} è utilizzato per scambio di dati (bit impostato a $0$) oppure per un motivo diverso (bit impostato a $1$);
+    \item \textbf{Null frame}: 1 bit che indica se il payload contiene dati validi (bit impostato a $1$) oppure se contiene dati non validi (bit impostato a $0$). In quest'ultimo caso, tutti i bit del campo \textbf{payload} vengono impostati a 0;
+    \item \textbf{Sync Frame}: 1 bit che indica se il frame è di sincronizzazione (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di sincronizzazione possono essere inviati solo se ci si trova in un segmento statico;
+    \item \textbf{Startup Frame Indicator}: 1 bit che indica se il frame è di tipo \textbf{startup} (bit impostato a $1$) oppure no (bit impostato a $0$). I frame di startup sono dei tipi particolari di frame che possono essere inviati solo da nodi \emph{coldstart} per sfruttare il meccanismo dello \emph{startup} dei nodi, inoltre, questo tipo di frame dovrebbe avere sia questo bit sia il bit \textbf{sync} a $1$;
+    \item \textbf{Frame ID}: 11 bit che definiscono lo slot temporale nel quale questo messaggio deve inviato. Ovviamente in un ciclo di comunicazione deve essere unico ed è un numero nel range 1-2047 (l'ID 0 non è valido);
+    \item \textbf{Payload Length}: 7 bit che indicano quanti gruppi di 2 Byte sono presenti nel payload. Se ad esempio, questo campo viene impostato a 35, allora la lunghezza del payload sarà $35\times 2 = 70$ Byte.
+    \item \textbf{Header CRC}: 11 bit che indicano il codice \textbf{CRC} per individuare errori nell'header. Viene calcolato tenendo in considerazione i bit \textbf{Sync frame}, \textbf{Startup Frame Indicator}, \textbf{Frame ID} e \textbf{Payload Length};
+    \item \textbf{Cycle Count}: 6 bit che indicano in quale ciclo di comunicazione ci si trova al momento dell'invio del frame;
+    \item \textbf{Payload}: segmento che ha una lunghezza massima di 254 Byte e che contiene i dati da inviare insieme al frame;
+    \item \textbf{CRC}: 24 bit che rappresentato il codice \textbf{CRC} per individuare errori nel payload;
+\end{itemize}
+
 \subsection{Topologie supportate}
+Il protocollo \emph{FlexRay} per come è stato progettato supporta diverse topologie di rete, in modo tale da adattarsi al meglio ad ogni tipo di situazione e garantire sempre elevati requisiti di affidabilità. Le topologie maggiormente utilizzate sono le seguenti:
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{0.8\textwidth}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/flexray-topologies.png}
+        \caption{Topologie di rete a \emph{Bus}, \emph{Stella} e \emph{Ibrida}}
+        \label{fig:flexray-topologies}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \vspace{0.3cm}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/flexray-multiple-star.jpg}
+        \caption{Topologia di rete a \emph{stella multipla}}
+        \label{fig:flexray-multiple-star}
+    \end{subfigure}
+    \caption{Principali topologie di rete supportate da \emph{FlexRay}}
+    \label{fig:flexray-supported-topologies}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Bus}: anche detta \emph{Multi-drop Bus} è la topologia più utilizzata (\autoref{fig:flexray-topologies}). In questo caso, c'è un cavo principale che fa da tronco (\emph{trunk}) e tutte le \emph{ECU} sono collegate a questo cavo tramite un connettore e un cavo più breve. Il cavo principale è poi terminato alle estremità con dei resistori per evitare problemi di \textbf{riflessione} del segnale. Questa è una delle topologie più utilizzate in quanto è anche quella utilizzata da \emph{CAN}, permettendo così una perfetta interoperabilità tra i due protocolli. Inoltre è anche la topologia che richiede un cablaggio più semplice rispetto alle altre topologie, rendendola la più economica. Tuttavia, essendo un unico cavo che collega tutti nodi, nel momento in cui questo si danneggia tutta la rete viene compromessa. Inoltre, essendo che questo cavo molto spesso è lungo, risente molto delle interferenze elettromagnetiche generate dal motore dell'automobile;
+    \item \textbf{Stella}: in questa topologia (\autoref{fig:flexray-topologies}), tutte le \emph{ECU} sono collegate con una \emph{ECU} attiva che fa da \emph{centro-stella} e ha un funzionamento che è simile a quello di un \emph{hub} o uno \emph{switch} casalingo. Il vantaggio di questa topologia sta nel fatto che non c'è un unico cavo che collega tutti i nodi ma ci sono tanti piccoli segmenti che rendono i collegamenti indipendenti. Infatti, nel momento in cui un segmento si danneggia viene isolata solo una \emph{ECU} lasciando la restante rete completamente funzionante. Inoltre, avendo collegamenti più corti, nel momento in cui si collegano più centri-stella tra di loro è possibile raggiungere distanze maggiori senza risentire delle interferenze elettromagnetiche;
+    \item \textbf{Ibrida}: topologia che combina i vantaggi della topologia a \emph{Stella} e della topologia \emph{Bus} (\autoref{fig:flexray-topologies}). In questo caso c'è un \emph{trunk} che collega sia singoli nodi che centri-stella, abbassando i costi dei cablaggi e sfruttando le performance e l'affidabilità delle stelle;
+    \item \textbf{Stella multipla}: detta anche \textbf{Dual-channel single star} topologia che cerca di migliorare l'affidabilità della stella aggiungendo un'ulteriore stella che si collega a tutti i nodi o ad un sottoinsieme di nodi (\autoref{fig:flexray-multiple-star}). Questa topologia si può realizzare sfruttando il fatto che ogni cavo \emph{FlexRay} è composto da due fili, quindi un filo sarà collegato ad una stella mentre l'altro ad un'altra stella. Ovviamente questo tipo di topologia rende il cablaggio più complesso però migliora l'affidabilità complessiva della rete. Inoltre, è possibile anche collegare in cascata più stelle tra di loro realizzando una topologia \textbf{Dual-channel cascaded star} aggiungendo ulteriori collegamenti ridondanti. \cite{eos_flexray} \cite{flexray_specification}
+\end{itemize}
 
 \section{LIN}
 
