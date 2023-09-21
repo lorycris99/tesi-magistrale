@@ -385,6 +385,104 @@ Il protocollo \emph{FlexRay} per come è stato progettato supporta diverse topol
 \end{itemize}
 
 \section{LIN}
+Il protocollo \emph{LIN} (Local Interconnect Network) è un protocollo a bassa affidabilità e larghezza di banda ridotta rispetto agli altri protocolli. La sua utilità nasce dal fatto che, essendo a basso costo, può sostituire una rete \emph{CAN} o \emph{FlexRay} (più costose rispetto a \emph{LIN}) per collegare componenti che non richiedono requisiti di affidabilità e banda particolari, come ad esempio i comandi dell'aria condizionata, i finestrini elettronici, la chiusura elettronica delle portiere, ecc.). Una prima differenza importante rispetto agli altri protocolli visti è che non è composto da nodi \textbf{paritari}, ma è composto da un nodo \textbf{master} e da un determinato numero di nodi \textbf{slave}. Per questa ragione non c'è bisogno di un \textbf{meccanismo di arbitraggio}, in quanto la rete è \textbf{arbitrata} dal nodo \emph{master} che si occuperà di interrogare gli \emph{slave} facendogli condividere informazioni e facendogli svolgere determinate operazioni
+\subsection{Caratteristiche del protocollo}
+Alcune delle caratteristiche di \emph{LIN} sono le seguenti:
+\begin{itemize}
+    \item Richiede un cablaggio a \textbf{basso costo} utilizzabile quando banda e affidabilità non sono richiesti. Consiste di un solo cavo con un singolo filo (gli altri ne usano almeno due);
+    \item Utilizza un'infrastruttura di tipo \textbf{master-slave}, per cui non è richiesto un meccanismo di arbitraggio e una rete \emph{LIN} è composta da 1 nodo \emph{master} e fino a 16 nodi \emph{slave};
+    \item Ha una larghezza di banda massima di circa 20 Kbps;
+    \item Supporta un meccanismo di correzione degli errori, un meccanismo di \textbf{sleep \& wakeup} (come \emph{FlexRay}) e può essere configurato; \cite{css_electronics_lin}
+    \item Può essere inviata una quantità variabile di dati (2, 4 e 8 Byte). \cite{wikipedia_lin}
+\end{itemize}
+
+Una particolarità di \emph{LIN} è che può lavorare in sinergia con reti \emph{CAN} e \emph{FlexRay}, infatti, solitamente più reti \emph{LIN} sono collegate tra loro utilizzando una \emph{backbone} realizzata con uno di questi ultimi due protocolli o simili.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\textwidth]{capitoli/figure-protocolli/lin-bus-can.png}
+    \caption{Rete \emph{LIN} collegata ad una backbone \emph{CAN}}
+    \label{fig:lin-can-backbone}
+\end{figure}
+
+Per questo motivo il nodo \emph{master}, oltre a gestire la rete, fa anche da \emph{gateway} per la rete di \emph{backbone}, inviando e ricevendo messaggi su di essa per comunicare con le altre reti \emph{LIN} collegate.
+
+\subsection{Struttura dei messaggi}
+Un tipico \emph{frame LIN} consiste di \emph{header} e \emph{risposta}, entrambi con una struttura ben definita. Essendo che non viene previsto un meccanismo di arbitraggio e che è presente un nodo master, esso invia un \emph{header} che viene intercettato da tutti i nodi \emph{slave} e, quando l'interessato lo riceve, genera una risposta che viene inviata al \emph{master}. Non possono essere generate collisioni in quanto il \emph{master} può "interrogare" un solo \emph{slave} alla volta, per cui ci sarà sempre una e sola trasmissione in atto sul canale.
+
+L'\emph{header} è composto come segue:
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{capitoli/figure-protocolli/lin-frame-format.png}
+    \caption{Struttura dei frame \emph{LIN}}
+    \label{fig:lin-frame-structure}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Break} o \textbf{SBF} (Sync Break Field): 14 bit o più (di solito ne vengono utilizzati almeno 18 bit) che agiscono come \emph{SOF}, quindi avvertono i nodi \emph{slave} che il nodo \emph{master} sta per inviare un messaggio sul canale;
+    \item \textbf{Sync}: 8 bit che hanno un valore preimpostato a 0x55 (corrispondente alla sequenza binaria $01010101$) e che permettono ai nodi slave di sincronizzare il proprio clock e di capire a quale velocità il nodo \emph{master} trasmetterà il messaggio;
+    \item \textbf{Identifier}: 6 bit, seguiti da 2 bit di parità (utilizzati per accertare la correttezza dei bit precedenti), che identificano il nodo \emph{slave} al quale il messaggio è diretto. \cite{css_electronics_lin}
+\end{itemize}
+
+Essendo che tutti i frame vengono inviati in broadcast, nel momento in cui uno slave riceve un header può intraprendere una delle seguenti azioni:
+\begin{enumerate}
+    \item Ignorare la trasmissione in quanto non interessato;
+    \item Mettersi in ascolto di una trasmissione proveniente da un altro nodo;
+    \item Inviare un \emph{frame} di risposta.
+\end{enumerate}
+
+La \emph{risposta} invece è composta come segue:
+\begin{itemize}
+    \item \textbf{Data}: tra 16 e 64 bit che determinano il \emph{payload} che un nodo slave vuole inviare. La lunghezza può variare tra 2, 4 e 8 Byte e, sebbene si possa personalizzare, di default la lunghezza del payload è associata ad un intervallo di identificatori (l'assegnazione di default è riportata in \autoref{table:lin-id-length});
+    \item \textbf{Checksum}: 8 bit che rappresentano la somma di controllo che serve ad assicurare l'integrità del messaggio. \cite{css_electronics_lin}
+\end{itemize}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{| c | c |}
+        \hline
+        \large{\textbf{Intervallo ID}} & \large{\textbf{Lunghezza}} \\
+        \hline\hline
+        0-31 & 2 Byte \\
+        \hline
+        32-47 & 4 Byte \\
+        \hline
+        48-63 & 8 Byte \\
+        \hline
+    \end{tabular}
+    \caption{Assegnazione di default delle lunghezze}
+    \label{table:lin-id-length}
+\end{table}
+
+\subsection{Tipologie di messaggi}
+Nel protocollo \emph{LIN} sono previste 6 tipologie di messaggi, i quali non presentano differenze a livello di \textbf{struttura} ma differiscono solo per la \textbf{semantica}, in base al contenuto del payload, in base a quando vengono inviati o in base all'ID che hanno associato. Le tipologie sono le seguenti:
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{0.7\textwidth}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/lin-frames-1.png}
+    \end{subfigure}
+    \begin{subfigure}{0.7\textwidth}
+        \includegraphics[width=1\textwidth]{capitoli/figure-protocolli/lin-frames-2.png}
+    \end{subfigure}
+    \caption{Tipologie di messaggi in \emph{LIN}}
+    \label{fig:lin-frames}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{Unconditional Frames}: sono il metodo di comunicazione di default. Il nodo \emph{master} invia un header per richiedere informazioni ad uno specifico nodo \emph{slave}, il quale risponde all'header inviando un messaggio con le informazioni richieste; \cite{css_electronics_lin}
+    \item \textbf{Event Trigger Frames}: il nodo \emph{master} interroga diversi nodi \emph{slave} richiedendo delle informazioni. Appena un nodo \emph{slave} ha le informazioni pronte, imposta come primo Byte del payload il proprio ID, seguito dalle informazioni richieste. Nel momento in cui il nodo \emph{master} rileva una collsione (interrogando più nodi questi potrebbero rispondere contemporaneamente), ritorna allo schema di default \textbf{Unconditional}. Questo schema è utile per aumentare la reattività della rete permettendo ai nodi di inviare le informazioni aggiornate appena pronte e senza aspettare l'interrogazione del \emph{master}; \cite{wikipedia_lin}
+    \item \textbf{Sporadic Frames}: messaggi utilizzati nel caso particolare in cui il nodo \emph{master} è già a conoscenza di informazioni aggiornate riguardo uno specifico \emph{slave}. In questo caso, il nodo \emph{master} invia un header e lui stesso si "comporta come uno \emph{slave}" rispondendo al proprio header con il payload aggiornato di cui era a conoscenza. Questo tipo di messaggio serve principalmente ad aggiornare i nodi \emph{slave} fornendo informazioni aggiornate e dinamiche;
+    \item \textbf{Diagnostic Frames}: messaggi utilizzati per scambiare informazioni \textbf{diagnostiche}. Questa tipologia di messaggio contiene sempre 8 Byte di dati e solitamente l'ID 60 corrisponde alla richiesta del \emph{master} mentre l'ID 61 alla risposta di uno \emph{slave};
+    \item \textbf{User Defined Frames}: messaggio completamente personalizzabile in fase di configurazione della rete. L'ID che viene assegnato a questo messaggio è 62 e può contenere qualunque informazione l'utente desideri;
+    \item \textbf{Reserved Frames}: messaggio con ID 63 e che non dovrebbe essere mai utilizzato in quanto questo è riservato per sviluppi futuri. \cite{css_electronics_lin}
+\end{enumerate}
+
+\subsection{Wakeup \& Sleep}
+Come nel protocollo \emph{FlexRay}, anche in \emph{LIN} è previsto un meccanismo di spegnimento e accensione dinamico dei nodi per risparmiare energia. Un nodo \emph{master} può forzare lo spegnimento dei nodi inviando un \emph{Diagnostic Frame} (quindi con ID 60) e con il primo Byte tutto a 0. In questo modo, i nodi che ricevono questo messaggio capiscono che devono mettersi in uno stato di \emph{sleep} (a basso consumo), rimanendo però in ascolto sul canale. Un altro modo affinchè i nodi entrino in modalità \emph{sleep} è semplicemente lasciando il canale inattivo per un lungo periodo di tempo (solitamente 4 secondi).
+
+Affinchè i nodi si risveglino, è necessario inviare una particolare sequenza di \emph{wakeup}, forzando una particolare sequenza di bit 1 e 0, per un determinato numero di volte e per determinati intervalli di tempo. Una volta che i nodi ricevono questa particolare sequenza, capiscono che devono tornare operativi e ricominciano a svolgere i propri compiti.
 
 \section{Confronto tra i tre protocolli}
 
