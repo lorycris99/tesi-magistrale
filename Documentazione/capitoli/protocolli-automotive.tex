@@ -511,4 +511,12 @@ Protocollo che richiede bassi costi e permette di realizzare una rete di nodi in
 \subsection{\emph{FlexRay}}
 Protocollo che richiede costi più elevati e permette di realizzare una rete ad alte prestazioni. Anch'esso viene utilizzato come rete di \emph{backbone} (come \emph{CAN}) e nei sottosistemi \textbf{powertrain} ma, tuttavia, grazie alla sua grande ampiezza di banda e alla sua architettura a doppio canale, è in grado di gestire sistemi ancora più avanzati rispetto a \emph{CAN} come i sistemi \textbf{ADAS} e \textbf{\emph{X}-by-wire}, dove sono necessarie prestazioni molto elevate e un'affidabilità molto alta. Sebbene realizzare una rete \emph{FlexRay} sia molto più costoso di una rete \emph{CAN}, per via dell'hardware specifico necessario, è in grado di abbassare lo stesso i costi di produzione in quanto una sigola rete \emph{FlexRay} è in grado di sostituire più reti \emph{CAN}, realizzando quindi una singola rete ad alte prestazioni piuttosto che molteplici a basse prestazioni. \cite{huang_2019_invehicle}
 
+\subsection{Sicurezza nei protocolli}
+Essendo che il campo di applicazione di questi protocolli ha dei requisiti di prestazioni e costi molto stringenti, non sono stati prevsiti meccanismi di sicurezza che impedissero attacchi da parte di malintenzionati. Per cui tutti e tre i protocolli, non avendo meccanismi di sicurezza e di autenticazione, sono vulnerabili a numerosi attacchi come ad esempio alcuni dei seguenti:
+\begin{itemize}
+    \item \textbf{Eavesdropping}: un attaccante si collega alla rete e si mette in ascolto passivo dei messaggi che vengono inviati. In questo modo può essere in grado, in base ai messaggi che intercetta, di stabilire le abitudini del guidatore, di intercettare messaggi particolari che permettono di accendere il motore, di disattivare il blocco delle porte, di attivare o disattivare i freni (anche in moto), ecc;
+    \item \textbf{Data manipulation}: un attaccante collegato alla rete è in grado di inviare e manipolare i messaggi sulla rete, generando messaggi che provocano risposte come lo sblocco della porta, abbassamento dei finestrini, avvio del motore, ecc. oppure messaggi che mostrano informazioni farlocche come una velocità sbagliata, un numero di \emph{RPM} sbagliato, livello di carburante più basso o più alto, ecc;
+    \item \textbf{DoS}: un attaccante collegato alla rete genera una quantità enorme di traffico con lo scopo di saturare la rete o una \emph{ECU} in particolare con lo scopo di creare un disservizio. \cite{bozdal_samie_jennions_2018}
+\end{itemize}
+
 \newpage
