@@ -1,10 +1,39 @@
 \chapter{Crittografia Post-Quantum}
 
 \begin{citazione}
-    Questo capitolo illustra lo stato dell'arte e i lavori presenti in letteratura sugli aspetti di ricerca trattati nel nostro studio. ECC ECC...
-    \end{citazione}
+    Questo capitolo ha lo scopo di introdurre brevemente gli strumenti crittografici utilizzati, ponendo particolare enfasi anche sui concetti sui quali sono costruiti questi strumenti.
+\end{citazione}
+
+\section{Problema dei computer quantistici}
+Un \emph{computer quantistico} è un elaboratore che, a differenza di un "classico" computer basato su \emph{transistor}, sfrutta la \emph{meccanica quantistica} per svolgere operazioni sui dati. In particolare, sfrutta le \emph{proprietà quantistiche} della materia (come ad esempio la sovrapposizione degli stati) e per questa ragione non utilizza come \emph{unità base di informazione} i \textbf{bit} per rappresentare lo stato della materia ma i \textbf{qubit}, simile ai \emph{bit} ma con la caratteristica di poter essere anche in due stati contemporaneamente (non come i bit che possono avere o solo valore 0 o solo 1). Questo perchè lo stato della materia (dal punto di vista quantistico) non sempre è in un solo stato e, quindi, per rispecchiare questa caratteristica è stato introdotto il \emph{qubit}. \cite{wikipedia_quantum_computing}
+
+Utilizzando un'architettura completamente diversa, è stato teorizzato un modello computazionale che descriva in maniera astratta un computer quantistico: la \textbf{Macchina di Turing quantistica}. Questa ha la caratteristica di essere equivalente ad una \textbf{Macchina di Turing} classica dal punto di vista del potere computazionale, tuttavia dal punto di vista delle "\textbf{prestazioni}" sembra che la macchina \emph{quantistica} sia molto più veloce di una macchina classica e, nella pratica, si traduce in elaboratori che sono molto più veloci dei normali computer diventando una vera e propria minaccia per la sicurezza dei sistemi. Infatti, esiste un algoritmo chiamato \textbf{Algoritmo di Shor} che, se eseguito su un computer quantistico abbastanza potente, permette di risolvere dei problemi che sono "\textbf{difficili}" per un normale computer in tempo \emph{polinomiale} (tempo molto breve), ovvero eseguire la fattorizzazione di un numero intero e il calcolo del logaritmo discreto, i quali sono i \textbf{problemi} su cui si basano rispettivamente il cifrario \textbf{RSA} e il cifrario \textbf{ElGamal} e sono attualmente gli schemi crittografici più utilizzati. Tuttavia, per utilizzare questo algoritmo in maniera efficace c'è bisogno di un computer quantistico in grado di utilizzare un numero di \textbf{qubit} abbastanza alto e per il momento ancora non esistono computer del genere, ma ciò non toglie che in futuro possa essere realizzato ed essere in grado di \emph{rompere} tutti i cifrari conosciuti basati sui problemi citati in precedenza. \cite{wikipedia_quantum_computing}
+
+Al fine di correre subito ai ripari, il \textbf{NIST} (National Institute of Standards and Technology) ha subito aperto un \emph{concorso} aperto a chiunque con lo scopo di standardizzare degli algoritmi a chiave pubblica in grado di \textbf{resitere all'attacco di un computer quantistico}, quindi che non sono basati su un problema risolvibile dall'\emph{algoritmo di Shor}. Questi algoritmi prendono il nome di \textbf{Crittografia Post-Quantistica} e sono tutti basati su problemi che non sono risolvibili in maniera facile nemmeno da un computer quantistico. \cite{wikipedia_quantum_computing}
+
+
+\section{\emph{KEM}}
+Un \textbf{Key Encapsulation Mechanism} è un algoritmo a chiave pubblica che permette di inviare in maniera sicura un segreto condiviso ad un interlocutore. Solitamente un \emph{KEM} tra due interlocutori \textbf{A} e \textbf{B} funziona nel seguente modo:
+\begin{enumerate}
+    \item \textbf{A} prende la chiave pubblica di \textbf{B} e la usa per generare il segreto da inviare (che custodirà in maniera sicura) e una \emph{capsula} che contiene il segreto in maniera "cifrata";
+    \item \textbf{A} invia la \emph{capsula} a \textbf{B};
+    \item \textbf{B} utilizza la sua chiave privata per aprire la \emph{capsula} e leggere il segreto inviato da \textbf{A}.
+\end{enumerate}
+
+Un \emph{KEM} può essere anche definito come un insieme di tre algoritmi:
+\begin{itemize}
+    \item \texttt{Gen(n)}: prende in input \texttt{n}, anche detto parametro di sicurezza (definisce quanto devono essere lunghe le chiavi generate), e restituisce una coppia di chiavi \texttt{pk} e \texttt{sk}, rispettivamente pubblica e privata;
+    \item \texttt{Encaps(pk)}: prende in input la chiave pubblica \texttt{pk} e restituisce un segreto \texttt{ss} e il relativo testo cifrato \texttt{ct} (la \emph{capsula});
+    \item \texttt{Decaps(ct, sk)}: prende in input la \emph{capsula} \texttt{ct} e la chiave privata \texttt{sk} e restituisce il segreto \texttt{ss}.
+\end{itemize}
+
+L'utilizzo più diffuso di un \emph{KEM} è quello di scambiare una chiave di sessione all'interno di un \textbf{cifrario ibrido}, ovvero uno schema di cifratura che utilizza sia una parte \textbf{asimmetrica} che una \textbf{simmetrica}, quindi il \emph{segreto} che viene incapsulato è un valore totalmente casuale che viene utilizzato come chiave. Tuttavia, è possibile modificare leggermente l'algoritmo \texttt{Encaps()} facendogli prendere in input anche un secondo valore \texttt{ss} scelto arbitrariamente, in modo tale da permettere anche uno \textbf{scambio di messaggi} e non solo uno \textbf{scambio di chiavi}. Un esempio di \emph{KEM} che può essere utilizzato in questo modo è \textbf{RSA}, che permette di scambiare sia chiavi che messaggi in modo da adattarsi a più utilizzi. \cite{wikipedia_kem}
+
+\section{Sicurezza dei cifrari}
+\subsection{Sicurezza \emph{IND-CCA2}}
 
 \section{CRYSTALS-kyber}
+
 
 \section{Advanced Encryption Standard}
 
