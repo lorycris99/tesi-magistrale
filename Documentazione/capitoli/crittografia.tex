@@ -192,6 +192,14 @@ Lo scopo di questa operazione è quella di combinare il blocco con la chiave del
 Essendo un cifrario a blocchi, opera su un dato preso in input blocco per blocco. Sebbene l'elaborazione di un singolo blocco è uguale per ognuno dal momento che l'algoritmo applicato è sempre uguale, lo stesso non vale per un gruppo consecutivo di blocchi in quanto questi possono essere elaborati in maniera diversa fornendo risultati completamente diversi. Si parla quindi di \textbf{modalità operative}, ovvero del modo in cui il cifrario elabora un input composto da più blocchi e le più diffuse sono le seguenti:
 
 \begin{figure}[h]
+    \centering
+    \includegraphics[width=0.6\textwidth]{capitoli/figure-crittografia/aes-ecb-linux.png}
+    \caption{Problema con l'utilizzo della modalità \emph{ECB}}
+    \label{fig:aes-ecb-linux}
+\end{figure}
+
+
+\begin{figure}[h!b]
     \begin{subfigure}{0.48\textwidth}
         \includegraphics[width=1\textwidth]{capitoli/figure-crittografia/aes-ecb.png}
         \caption{Schema di funzionamento della modalità \emph{ECB}}
@@ -230,13 +238,6 @@ Essendo un cifrario a blocchi, opera su un dato preso in input blocco per blocco
     \item \textbf{CTR} (Counter): modalità dove i blocchi vegono elaborati in maniera indipendente (simile a \emph{ECB}). Per prima cosa viene generato un \textbf{nonce} (un numero casuale) al quale viene sommato un contatore che parte da 0 e viene incrementato man mano che si processano i blocchi. Il valore ottenuto viene dato in pasto alla cifratura e il risultato viene messo in \emph{XOR} con il blocco per ottenere il testo cifrato. Anche nel caso della decifratura il risultato della somma viene dato in input alla \textbf{cifratura}, ma questo viene messo in \emph{XOR} con il testo cifrato per ottenere il testo in chiaro. Uno schema che descrive il funzionamento si trova in \autoref{fig:aes-ctr}. \cite{wikipedia_aes_modes}
 \end{itemize}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.6\textwidth]{capitoli/figure-crittografia/aes-ecb-linux.png}
-    \caption{Problema con l'utilizzo della modalità \emph{ECB}}
-    \label{fig:aes-ecb-linux}
-\end{figure}
-
 Un confronto che si può fare tra le varie modalità riguarda la possibilità di parallelizzare cifratura e decifratura e la possibilità di effettuare l'accesso casuale in lettura ad un blocco dell'input. Una tabella riassuntiva di tale confronto può essere consultato in \autoref{table:aes-modes-comparison} \cite{wikipedia_aes_modes}
 
 \begin{table}[h]
@@ -257,5 +258,23 @@ Un confronto che si può fare tra le varie modalità riguarda la possibilità di
 \end{table}
 
 \subsection{Sicurezza del cifrario}
+Un algoritmo di cifratura è considerato sicuro se il miglior algoritmo utilizzabile per "romperlo" è l'algortimo di \textbf{forza bruta}, ovvero vengono provate tutte le possibili chiavi in sequenza fino ad indovinare quella corretta. \emph{AES}, fino ad oggi, è ancora considerato sicuro in quanto non è stato ancora trovato nessun attacco realizzabile nei suoi confronti anche se sono stati \textbf{teorizzati} dei possibili attacchi. Uno degli attacchi più famosi in letteratura è chiamato \textbf{XSL Attack} (eXtended Sparse Linearization), il quale cerca di sfruttare una debolezza di \emph{AES} dovuta alla scarsa complessità delle componenti \textbf{non lineari} ma è stato dimostrato che questo attacco non è praticabile, quindi rimane sicuro anche rispetto a questo attacco. Un altro attacco molto famoso è l'attacco \textbf{biclique}, una variante del \textbf{Meet-In-The-Middle} (un attacco che sfrutta combinazioni di testi in chiaro e cifrati per ricavare la chiave di cifratura) che è stato dimostrato essere 4 volte più veloce di un attacco a forza bruta. Tuttavia, analizzando il guadagno ottenuto in termini di \textbf{parametro di sicurezza} quello che si ottiene è che invece di ottenere una sicurezza a 128 bit (per \emph{AES-128}) si ottiene una sicurezza di 126 bit (2 bit in meno anche per le altre varianti di \emph{AES}), che è ancora un ottimo livello di sicurezza in quanto per concludere con successo un attacco del genere sono ancora richiesti \textbf{miliardi di anni}. Quindi anche nei confronti di quest'ultimo attacco è considerato ancora sicuro. \cite{wikipedia_aes}
+
+Inoltre, è stato recentemente dimostrato che \emph{AES} è anche \textbf{Quantum-safe} ed è quindi persino in grado di resistere ad un attacco di un computer quantistico. Ovviamente, essendo più potente, il livello di sicurezza offerto dalle varie versioni dell'algoritmo sarà minore rispetto a quelle offerte per i computer classici. Un confronto, in termini di livello di sicurezza offerto, tra computer classici e quantistici può essere visto in \autoref{table:aes-security}. \cite{aes_quantum_safe}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{| c | c | c | c |}
+        \hline
+        \textbf{Algoritmo} & \textbf{Lunghezza chiave} & \textbf{Sicurezza classica} &\textbf{Sicurezza quantum} \\
+        \hline
+        AES-128 & 128 bit & 128 bit & 64 bit \\
+        \hline
+        AES-256 & 256 bit & 256 bit & 128 bit \\
+        \hline
+    \end{tabular}
+    \caption{Sicurezza offerta da \emph{AES} per computer classici e quantistici}
+    \label{table:aes-security}
+\end{table}
 
 \newpage
