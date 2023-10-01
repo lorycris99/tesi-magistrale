@@ -1,0 +1,9 @@
+Per compilare con le librerie condivise:
+gcc test.c ../kyber/ref/randombytes.c -L/home/lorenzo/Documenti/test/lib -l:libpqcrystals_kyber512_ref.so -l:libpqcrystals_aes256ctr_ref.so -l:libpqcrystals_fips202_ref.so
+
+con "-L path" specifico il path che il linker deve consultare per trovare le librerie che specifico, con "-l:nome.so" specifico il nome preciso della libreria da linkare
+
+Per eseguire devo lanciare:
+export LD_LIBRARY_PATH=/home/lorenzo/Documenti/test/lib
+
+Questa variabile fa capire al loader dove può trovare le librerie condivise necessarie per l'esecuzione
