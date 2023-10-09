@@ -48,3 +48,32 @@ Per poter realizzare il \textbf{cifrario ibrido} citato in precedenza, è necess
 In seguito a questa decisione, quindi, si è deciso di impiegare come algorimto \emph{simmetrico} il cifrario \textbf{AES-256} mentre come algoritmo \emph{asimmetrico} il \emph{KEM} \textbf{CRYSTALS-kyber-512}.
 
 \subsection{Funzionamento della soluzione}
+Una delle caratterestiche che si vogliono garantire con l'introduzione del \textbf{cifrario ibrido}, come citato in precedenza, è la \textbf{retrocompatibilità} con le \emph{ECU} che non adottano la soluzione, in modo tale da estendere la soluzione proposta a quante più auto possibile.\\
+Il modo migliore per garantire questa caratterestica è quella di \textbf{non modificare il protocollo}, senza alterarne nè la struttura nè i messaggi scambiati e senza applicare modifiche all'hardware necessario. Quindi, l'aggiunta del cifrario non può avvenire a livello di protocollo (implicherebbe una modifica a \emph{CAN}) ma deve avvenire a livello di \textbf{applicazione}. L'idea è quella di far sì che l'applicativo sull'\emph{ECU} effettui la cifratura del payload \textbf{prima} che questo venga inviato come messaggio tramite \emph{CAN}. In questo modo, il payload che viaggia \emph{in chiaro} è in realtà un payload cifrato che verrà decifrato dalla \emph{ECU} interessata, senza il rischio che un attaccante possa fare \textbf{eavesdropping} del messaggio.
+
+Per poter realizzare un sistema del genere, è necessario creare un \textbf{protocollo} che si occupi di:
+\begin{itemize}
+    \item Generare una coppia di chiavi;
+    \item Scambiare una chiave di sessione;
+    \item Cifrare un messaggio;
+    \item Decifrare un messaggio.
+\end{itemize}
+
+Tutto questo, ovviamente, senza aggiungere nuove tipologie di messaggi e senza alterare gli ID \emph{CAN} disponibili, in modo da causare incompatibilità con \emph{CAN}. Quindi, un possibile protocollo che riesca ad occuparsi di tutti i compiti citati può essere la seguente sequenza di passi:
+\begin{enumerate}
+    \item Generazione di una coppia di chiavi \emph{asimmetriche};
+    \item Scambio della chiave pubblica;
+    \item Generazione di una chiave di sessione;
+    \item Scambio e salvataggio della chiave di sessione;
+    \item Cifratura e decifratura del traffico.
+\end{enumerate}
+
+Un sequence diagram che chiarisce il funzionamento può essere visto in \autoref{fig:sequence-diagram-protocol}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{capitoli/figure-soluzione-proposta/sequence-key-exchange.png}
+    \caption{Sequence Diagram del protocollo proposto}
+    \label{fig:sequence-diagram-protocol}
+\end{figure}
+
+Riuscendo ad implementare il protocollo proposto senza dover necessariamente alterare caratterestiche di \emph{CAN}, permetterebbe di riuscire a \textbf{proteggere il payload} e raggiungere l'obiettivo fissato per il lavoro.
