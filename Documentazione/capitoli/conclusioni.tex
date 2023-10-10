@@ -7,18 +7,18 @@
 \end{citazione}
 
 \section{Considerazioni finali}
-Prendendo in considerazione il confronto effettuato sui tempi raccolti, si possono discutere con molta più chiarezza i lati positivi e negativi di questa soluzione, approfondendo anche eventuali modifiche potrebbero migliorare i risultati ottenuti.
+Prendendo in considerazione il confronto effettuato sui tempi raccolti, si possono discutere con molta più chiarezza i lati positivi e negativi di questa soluzione, approfondendo anche eventuali modifiche che potrebbero migliorare i risultati ottenuti.
 
 \subsection{Sicurezza garantita}
 A livello di guadagno in termini di sicurezza, sicuramente la soluzione è sicura contro: 
 \begin{itemize}
-	\item \textbf{Eavesdropping}, ovvero l'ascolto passivo della rete. Infatti, grazie alla cifratura simmetrica e all'aggiornamento della chiave di sessione (cambiando anche chiavi di cifratura asimettrica) non si è più in grado di distinguere i vari messaggi in transito sulla rete;
-	\item \textbf{Data manipulation} poichè alterando un bit di un messaggio cifrato, il messaggio cambia completamente e la probabilità che la modifica porti ad un messaggio con un \textbf{payload} e un \textbf{CRC} che ne confermi l'integrità è talmente bassa da rendere la fattibilità di questo tipo di attacco quasi impossibile. Inoltre, si può migliorare ulteriormente la resistenza contro questo attacco utilizzando la modalità \textbf{AES-GCM}, che è una modifica della modalità \emph{CTR} che la rende \textbf{autenticata} e quindi qualunque modifica al messaggio fa produrre un errore in decifratura; \cite{wikipedia_gcm}
+	\item \textbf{Eavesdropping}, ovvero l'ascolto passivo della rete. Infatti, grazie alla cifratura simmetrica e all'aggiornamento della chiave di sessione (cambiando anche chiavi di cifratura asimmetrica) non si è più in grado di distinguere i vari messaggi in transito sulla rete;
+	\item \textbf{Data manipulation}, poichè alterando anche solo un bit di un messaggio cifrato, il messaggio cambia completamente, inoltre, la probabilità che la modifica porti ad un messaggio con un \textbf{payload} e un \textbf{CRC} corretto (quindi che ne conferma l'integrità) è talmente bassa da rendere la fattibilità di questo tipo di attacco quasi impossibile. Inoltre, si può migliorare ulteriormente la resistenza contro questo attacco utilizzando la modalità \textbf{AES-GCM}, che è una modifica della modalità \emph{CTR} che la rende \textbf{autenticata} e quindi qualunque modifica al messaggio fa produrre un errore in decifratura. \cite{wikipedia_gcm}
 \end{itemize}
 
 Tuttavia, anche con questa soluzione il protocollo rimane vulnerabile ad alcuni attacchi:
 \begin{itemize}
-	\item \textbf{Data injection}: un malintenzionato che si collega alla rete, può generarsi delle chiavi asimmetriche ed effettuare lo scambio di una sessione, con la conseguenza che è in grado di inviare messaggi arbitrari \textbf{validi}, arrecando disturbi e mostrando informazioni false. Purtroppo, per risolvere questo problema o si rende più complesso l'accesso alla rete o si utilizza un'\textbf{autorità di certificazione} che garantisca la validità delle chiavi, aggiungendo ulteriore \textbf{overhead} a delle prestazioni già pessime;
+	\item \textbf{Data injection}: un malintenzionato che si collega alla rete, può generarsi delle chiavi asimmetriche ed effettuare lo scambio di una sessione, con la conseguenza che è in grado di inviare messaggi arbitrari \textbf{validi}, arrecando disturbi e mostrando informazioni false. Purtroppo, per risolvere questo problema o si può utilizzare un'\textbf{autorità di certificazione} che garantisca la validità delle chiavi, aggiungendo ulteriore \textbf{overhead} a delle prestazioni già pessime;
 	\item \textbf{Denial of Service}: un malintenzionato è ancora in grado di collegarsi alla rete e generare messaggi arbitrari arrecando disturbo alla rete e saturandola con grandi quantità di dati \emph{spazzatura}.
 \end{itemize}
 
@@ -37,7 +37,7 @@ L'utilizzo di questi cifrari potrebbe migliorare le prestazioni della soluzione 
 
 \subsection{Utilizzo in un contesto V2X}
 Il protocollo realizzato, per come è stata realizzato, si presta molto bene ad un adattamento in un altro contesto: \textbf{Vehicle-to-Everything} (o \emph{V2X}).\\
-Questo non è altro che una tipologia di comunicazione che coinvolge un auto e qualunque altra entità "intelligente", che può essere uno smartphone, una casa, un cloud (ad esempio per ricevere aggiornamenti di sistema), altri veicoli o persino biciclette e sedie a rotelle. Le motivazioni dietro questa tipologia di comunicazione includono:
+Questa non è altro che una tipologia di comunicazione che coinvolge un auto e qualunque altra entità "intelligente", che può essere uno smartphone, una casa, un cloud (ad esempio per ricevere aggiornamenti di sistema), altri veicoli o persino biciclette e sedie a rotelle. Le motivazioni dietro questa tipologia di comunicazione includono:
 \begin{itemize}
 	\item Aumento della sicurezza stradale;
 	\item Migliore gestione dei flussi di traffico;

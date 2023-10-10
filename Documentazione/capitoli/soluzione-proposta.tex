@@ -1,7 +1,7 @@
 \chapter{Soluzione Proposta}
 
 \begin{citazione}
-    In questo capitolo vengono introdotte le motivazioni dietro la scelta del protocollo \emph{CAN}, nonchè delle problematiche riscontrate e di come può essere possibile risolverle
+    In questo capitolo vengono discusse le motivazioni dietro la scelta del protocollo \emph{CAN}, nonchè delle problematiche riscontrate nel protocollo e di come può essere possibile risolverle
 \end{citazione}
 
 \section{Scelta del protocollo}
@@ -14,7 +14,7 @@ Nonostante \emph{CAN} sia uno dei protocolli più utilizzati nell'ambito \emph{A
     \item Assenza di un qualunque meccanismo di \textbf{autenticazione} dei nodi, permettendo a chiunque si connetta alla rete di inviare e leggere dati, permettendo anche l'invio di \textbf{messaggi falsi} e l'invio di un grande numero di messaggi \emph{spazzatura} con lo scopo di disturbare la rete o renderla \textbf{non disponibile}.
 \end{itemize}
 
-Questa situazione è originata dal fatto che i creatori del protocollo hanno posto l'attenzione soprattutto sulle \textbf{prestazioni}, tralasciando gli aspetti di sicurezza. Il motivo dietro questa scelta è che, essendo utilizzato in un ambiente \emph{safety-critical}, introducendo dei ritardi nella comunicazione si generano dei rischi all'incolumità delle persone all'interno delle auto in cui è utilizzato \emph{CAN}, nonchè di quelle nelle vicinanze, situazione \textbf{inaccettabile}. Se si pensa ad un sistema \textbf{Steer-by-wire}, nel quale una \emph{ECU} controlla la rotazione delle ruote in base al movimento dello sterzo, un ritardo tra movimento dello sterzo e rotazione \emph{effettiva} delle ruote potrebbe tramutarsi in un impatto con un oggetto (edificio, veicolo, ecc.) o persona.
+Questa situazione è originata dal fatto che i creatori del protocollo hanno posto l'attenzione soprattutto sulle \textbf{prestazioni}, tralasciando gli aspetti di sicurezza. Il motivo dietro questa scelta è che, essendo utilizzato in un ambiente \emph{safety-critical}, introducendo dei ritardi nella comunicazione si generano dei rischi all'incolumità delle persone all'interno delle auto in cui è utilizzato \emph{CAN}, nonchè di quelle nelle vicinanze, sfociando così in una situazione \textbf{inaccettabile}. Se si pensa ad un sistema \textbf{Steer-by-wire}, nel quale una \emph{ECU} controlla la rotazione delle ruote in base al movimento dello sterzo, un ritardo tra movimento dello sterzo e rotazione \emph{effettiva} delle ruote potrebbe tramutarsi in un impatto con un oggetto (edificio, veicolo, ecc.) o persona.
 
 \section{Soluzione proposta}
 Per cercare di risolvere il problema della mancanza di \textbf{protezione del payload} all'interno del protocollo \emph{CAN}, quello che si è voluto proporre è l'\textbf{aggiunta di uno strato di cifratura} che protegga lo scambio di messaggi sulla rete. Una soluzione abbastanza banale può essere quella di decidere, in fase di configurazione della rete, una chiave di cifratura e utilizzare \textbf{sempre} quella per inviare messaggi cifrati, tuttavia, una soluzione del genere è inaccettabile per molti motivi, tra cui:
@@ -24,7 +24,7 @@ Per cercare di risolvere il problema della mancanza di \textbf{protezione del pa
 \end{itemize}
 
 Quindi è necessario trovare un modo che permetta di \textbf{non dover salvare la chiave} e che consenta un \textbf{aggiornamento della chiave da utilizzare}, in modo tale da evitare modifiche alle \emph{ECU} (rendendo la soluzione \textbf{retrocompatibile} con le automobili già in commercio) e far si che in caso di violazione della chiave sia compromessa solo una sessione e non tutte.\\
-Il modo migliore per garantire queste due caratterestiche è l'utilizzo di un \textbf{cifrario ibrido}, ovvero un cifrario che ha una componente asimmetrica per far accordare i nodi su una stessa chiave di sessione e che ha una componente simmetrica con la quale viene utilizzata la chiave di sessione come chiave di cifratura per i messaggi che devono essere scambiati. Uno schema riassuntivo di ciò che vuole introdurre la soluzione si può consultare nella \autoref{fig:can-protection}.
+Il modo migliore per garantire queste due caratteristiche è l'utilizzo di un \textbf{cifrario ibrido}, ovvero un cifrario che ha una componente asimmetrica per far accordare i nodi su una stessa chiave di sessione e che ha una componente simmetrica con la quale viene utilizzata la chiave di sessione come chiave di cifratura per i messaggi che devono essere scambiati. Uno schema riassuntivo di ciò che vuole introdurre la soluzione si può consultare nella \autoref{fig:can-protection}.
 
 \begin{figure}[h]
     \begin{subfigure}{0.45\textwidth}
@@ -48,8 +48,8 @@ Per poter realizzare il \textbf{cifrario ibrido} citato in precedenza, è necess
 In seguito a questa decisione, quindi, si è deciso di impiegare come algorimto \emph{simmetrico} il cifrario \textbf{AES-256} mentre come algoritmo \emph{asimmetrico} il \emph{KEM} \textbf{CRYSTALS-kyber-512}.
 
 \subsection{Funzionamento della soluzione}
-Una delle caratterestiche che si vogliono garantire con l'introduzione del \textbf{cifrario ibrido}, come citato in precedenza, è la \textbf{retrocompatibilità} con le \emph{ECU} che non adottano la soluzione, in modo tale da estendere la soluzione proposta a quante più auto possibile.\\
-Il modo migliore per garantire questa caratterestica è quella di \textbf{non modificare il protocollo}, senza alterarne nè la struttura nè i messaggi scambiati e senza applicare modifiche all'hardware necessario. Quindi, l'aggiunta del cifrario non può avvenire a livello di protocollo (implicherebbe una modifica a \emph{CAN}) ma deve avvenire a livello di \textbf{applicazione}. L'idea è quella di far sì che l'applicativo sull'\emph{ECU} effettui la cifratura del payload \textbf{prima} che questo venga inviato come messaggio tramite \emph{CAN}. In questo modo, il payload che viaggia \emph{in chiaro} è in realtà un payload cifrato che verrà decifrato dalla \emph{ECU} interessata, senza il rischio che un attaccante possa fare \textbf{eavesdropping} del messaggio.
+Una delle caratteristiche che si vogliono garantire con l'introduzione del \textbf{cifrario ibrido}, come citato in precedenza, è la \textbf{retrocompatibilità} con le \emph{ECU} che non adottano la soluzione, in modo tale da estendere la soluzione proposta a quante più auto possibile.\\
+Il modo migliore per garantire questa caratteristica è quella di \textbf{non modificare il protocollo}, senza alterarne nè la struttura nè i messaggi scambiati e senza applicare modifiche all'hardware necessario. Quindi, l'aggiunta del cifrario non può avvenire a livello di protocollo (implicherebbe una modifica a \emph{CAN}) ma deve avvenire a livello di \textbf{applicazione}. L'idea è quella di far sì che l'applicativo sull'\emph{ECU} effettui la cifratura del payload \textbf{prima} che questo venga inviato come messaggio tramite \emph{CAN}. In questo modo, il payload che viaggia \emph{in chiaro} è in realtà un payload cifrato che verrà decifrato dalla \emph{ECU} interessata, senza il rischio che un attaccante possa fare \textbf{eavesdropping} del messaggio.
 
 Per poter realizzare un sistema del genere, è necessario creare un \textbf{protocollo} che si occupi di:
 \begin{itemize}
@@ -59,7 +59,7 @@ Per poter realizzare un sistema del genere, è necessario creare un \textbf{prot
     \item Decifrare un messaggio.
 \end{itemize}
 
-Tutto questo, ovviamente, senza aggiungere nuove tipologie di messaggi e senza alterare gli ID \emph{CAN} disponibili, in modo da causare incompatibilità con \emph{CAN}. Quindi, un possibile protocollo che riesca ad occuparsi di tutti i compiti citati può essere la seguente sequenza di passi:
+Tutto questo, ovviamente, senza aggiungere nuove tipologie di messaggi e senza alterare gli ID \emph{CAN} disponibili, in modo da non causare incompatibilità con \emph{CAN}. Quindi, un possibile protocollo che riesca ad occuparsi di tutti i compiti citati può essere la seguente sequenza di passi:
 \begin{enumerate}
     \item Generazione di una coppia di chiavi \emph{asimmetriche};
     \item Scambio della chiave pubblica;
@@ -76,4 +76,4 @@ Un sequence diagram che chiarisce il funzionamento può essere visto in \autoref
     \label{fig:sequence-diagram-protocol}
 \end{figure}
 
-Riuscendo ad implementare il protocollo proposto senza dover necessariamente alterare caratterestiche di \emph{CAN}, permetterebbe di riuscire a \textbf{proteggere il payload} e raggiungere l'obiettivo fissato per il lavoro.
+Riuscendo ad implementare il protocollo proposto senza dover necessariamente alterare caratteristiche di \emph{CAN}, permetterebbe di riuscire a \textbf{proteggere il payload} e raggiungere l'obiettivo fissato per il lavoro.
