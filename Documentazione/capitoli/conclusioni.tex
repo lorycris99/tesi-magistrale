@@ -22,10 +22,10 @@ Tuttavia, anche con questa soluzione il protocollo rimane vulnerabile ad alcuni 
 	\item \textbf{Denial of Service}: un malintenzionato è ancora in grado di collegarsi alla rete e generare messaggi arbitrari arrecando disturbo alla rete e saturandola con grandi quantità di dati \emph{spazzatura}.
 \end{itemize}
 
-\subsection{Utilizzare versioni ottmizzate dei cifrari}
+\subsection{Utilizzo di versioni ottmizzate dei cifrari}
 Il problema principale della soluzione proposta riguarda i tempi necessari per effettuare le varie operazioni crittografiche. Questo è dovuto principalemte al fatto che sono state utilizzate versioni \textbf{generiche} degli algoritmi e quindi non ottimizzate allo scopo, per cui utilizzando versioni \textbf{ottimizzate} di questi, è possibile ridurre drasticamente i tempi. Infatti, è possibile realizzare una versione di \textbf{AES-128} che aggiunge un overhead nell'ordine dei \textbf{nanosecondi} \cite{bozdal_samie_jennions_2018} ed esiste una versione di \textbf{kyber} ottimizzata per determinate architetture di processori. Per cui, utilizzando queste piuttosto che le generiche, sicuramente si possono ottenere risultati \textbf{molto più soddisfacenti}.
 
-\subsection{Ottimizzare il protocollo}
+\subsection{Ottimizzazione del protocollo}
 Un altro problema è dovuto al fatto che il protocollo realizzato genera l'invio di molti messaggi, appesantendo molto la fase di scambio delle chiavi di sessione. A questo punto, una modifica che potrebbe essere fatta è quella di utilizzare \emph{CAN FD}, il quale permette di inviare fino a 64 Byte alla volta e riduce drasticamente il numero di messaggi scambiati ottenendo un guadagno prestazionale non indifferente. Un'altra possibile strada da seguire, per continuare ad utilizzare la versione base di \emph{CAN}, consiste nel modificare il protocollo in modo da tentare di \emph{ottimizzare} il numero di messaggi da scambiare e velocizzare questa fase (provando anche ad effettuare una \textbf{compressione} delle chiavi pubbliche per ridurne la grandezza).
 
 \section{Sviluppi Futuri}
@@ -66,6 +66,21 @@ Tuttavia, in un contesto del genere, risulterebbe molto semplice per un attaccan
 In questo modo, rilasciando dei certificati per ogni dispositivo nessuno può impersonare qualcun'altro e un attacco da parte di un malintenzionato diventa più difficile. Ma per effettuare tutte queste operazioni, purtroppo, è necessaria molta potenza di calcolo e molto tempo, quindi bisogna ottimizzare il protocollo per stringere i tempi e utilizzare dei processori che permettano una verifica dei protocolli più veloce.
 
 \subsection{Aggiunta di un'autorità di certificazione}
+La soluzione si è focalizzata principalmente sul problema della protezione del payload, tuttavia, questa può essere adattata anche al problema dell'\textbf{autenticazione} facendo alcuni accorgimenti.\\
+Il problema principale di \emph{CAN} è che chiunque si collega alla rete è in grado di ricevere e trasmettere come il resto dei nodi, per cui è necessario un \emph{filtro} con cui stabilire chi può essere in grado di comunicare sulla rete. Riguardo la ricezione, per come è stato realizzato \emph{CAN}, non si può evitare ad un malintenzionato di mettersi in ascolto ma si possono proteggere i messaggi con la cifratura in modo tale da non esporre informazioni sensibili, mentre riguardo l'invio si può fare in modo che tutti i nodi \textbf{legittimi} ignorino ogni messaggio proveniente da un nodo non autorizzato. Per poter realizzare un sistema del genere bisognerebbe fare due modifiche:
+\begin{itemize}
+	\item Evitare di generare una coppia di chiavi ad ogni avvio, ma generarla solo la prima volta ed utilizzare quella. Questo non riduce la sicurezza del sistema realizzato ma bisogna fare attenzione alla segretezza delle \textbf{chiavi private}, poichè in caso di compromissione bisogna rigenerarle \textbf{immediatamente}.
+	\item Prevedere la presenza di un nodo \emph{CA} che aiuti la rete a distinguere le chiavi pubbliche \textbf{autorizzate e non}, come mostrato in \autoref{fig:can-ca}
+\end{itemize}
 
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.6\textwidth]{capitoli/figure-conclusioni/can-ca.png}
+	\caption{Rete \emph{CAN} con protezione del payload e nodo \emph{CA}}
+	\label{fig:can-ca}
+\end{figure}
 
+In questo modo, si potrebbe modificare il protocollo in modo tale che, alla ricezione di una chiave pubblica, si attenda un riscontro positivo o negativo da parte del nodo \emph{CA} e, in base a questo, salvare o scartare la chiave ricevuta (oltre al traffico che proviene da quel nodo).
+
+Ovviamente, oltre alla modifica al protocollo, bisognerebbe anche trovare un modo per garantire la provenienza dei riscontri da parte della \emph{CA}, poichè un nodo malizioso potrebbe generarsi da solo un riscontro positivo e inviarlo spacciandosi per il nodo \emph{CA}. In questo caso, un modo per garantire la provenienza del riscontro può essere quello di prevedere la presenza di una \textbf{firma}, ottenuta utilizzando uno schema di \textbf{firma digitale Post-Quantum} come \textbf{Dilithium}, anch'esso costruito su un problema basato sul \textbf{problema dei reticoli}. Tuttavia, oltre a dover necessariamente generare più messaggi per inviare sia riscontro che firma, si rischia di introdurre un onere computazionale troppo grande per l'hardware limitato di una \emph{ECU} e anche un ulteriore ritardo che rischia di compromettere la funzionalità di \emph{CAN}.
 \newpage
